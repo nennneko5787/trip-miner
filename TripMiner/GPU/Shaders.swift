@@ -737,7 +737,7 @@ kernel void cryptMain(uint gid [[thread_position_in_grid]],
   // FPの並び替えは生成matcher側で吸収する
   output[gid] = regex_match(state);
 }
-    """
+"""
     static let shaHash: String = """
 #include <metal_stdlib>
 using namespace metal;
@@ -858,7 +858,7 @@ kernel void shaHashMain(uint gid [[thread_position_in_grid]],
   digest_output[base + 1u] = digest.y;
   digest_output[base + 2u] = digest.z;
 }
-    """
+"""
     static let shaRegex: String = """
 #include <metal_stdlib>
 using namespace metal;
@@ -925,5 +925,5 @@ kernel void shaRegexMain(uint gid [[thread_position_in_grid]],
 
   output_mask[batch * chunks_per_batch + chunk] = regex_match(planes);
 }
-    """
+"""
 }
