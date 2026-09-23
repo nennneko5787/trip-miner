@@ -146,14 +146,26 @@ final class MinerViewModel: ObservableObject {
     // MARK: 10桁
 
     private func runCrypt(pattern: String, matcher: String, settings: SearchSettings) async throws {
-        let engine = MetalEngine.shared
         resetStats()
         let regex = try NSRegularExpression(pattern: pattern)
-        func isMatch(_ trip: String) -> Bool {
-            regex.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
+        // GPU初期化・実行に失敗したらCPUにフォールバックする
+        if MetalEngine.shared.isAvailable {
+            do {
+                try await runCryptGPU(matcher: matcher, settings: settings)
+                return
+            } catch {
+                if stopRequested { return }
+                errorMessage = "GPU初期化に失敗したためCPUで継続します"
+            }
         }
-        if engine.isAvailable {
-            try crypt.prepare(matcher: matcher, threadWidth: 128)
+        if stopRequested { return }
+        await runCryptCPU(regex: regex)
+    }
+
+    /// GPUパス。失敗時は throw し、呼び出し側がCPUにフォールバックする
+    private func runCryptGPU(matcher: String, settings: SearchSettings) async throws {
+        let engine = MetalEngine.shared
+        try crypt.prepare(matcher: matcher, threadWidth: 128)
             // 自動調整
             let tune = engine.autoTune(
                 measure: { tg, tw in
@@ -182,31 +194,46 @@ final class MinerViewModel: ObservableObject {
                 seed = TripSpec.advanceSeed10(lo: seed.lo, hi: seed.hi, step: step)
                 await Task.yield()
             }
-        } else {
-            // CPUフォールバック (シミュレータ等)
-            state = .mining
-            var seed = TripSpec.randomSeed10()
-            while !stopRequested {
-                let found = crypt.searchCPU(seedLo: seed.lo, seedHi: seed.hi, count: 4096, match: isMatch)
-                appendMatches(found.map { "◆\($0.trip) : ##\($0.key)" })
-                noteHashes(4096)
-                seed = TripSpec.advanceSeed10(lo: seed.lo, hi: seed.hi, step: 4096 * 7)
-                await Task.yield()
-            }
+    }
+
+    private func runCryptCPU(regex: NSRegularExpression) async {
+        func isMatch(_ trip: String) -> Bool {
+            regex.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
+        }
+        state = .mining
+        var seed = TripSpec.randomSeed10()
+        while !stopRequested {
+            let found = crypt.searchCPU(seedLo: seed.lo, seedHi: seed.hi, count: 4096, match: isMatch)
+            appendMatches(found.map { "◆\($0.trip) : ##\($0.key)" })
+            noteHashes(4096)
+            seed = TripSpec.advanceSeed10(lo: seed.lo, hi: seed.hi, step: 4096 * 7)
+            await Task.yield()
         }
     }
 
     // MARK: 12桁
 
     private func runSha(pattern: String, matcher: String, settings: SearchSettings) async throws {
-        let engine = MetalEngine.shared
         resetStats()
         let regex = try NSRegularExpression(pattern: pattern)
-        func isMatch(_ trip: String) -> Bool {
-            regex.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
+        // GPU初期化・実行に失敗したらCPUにフォールバックする
+        if MetalEngine.shared.isAvailable {
+            do {
+                try await runShaGPU(matcher: matcher, settings: settings)
+                return
+            } catch {
+                if stopRequested { return }
+                errorMessage = "GPU初期化に失敗したためCPUで継続します"
+            }
         }
-        if engine.isAvailable {
-            try sha.prepare(matcher: matcher, threadWidth: 128)
+        if stopRequested { return }
+        await runShaCPU(regex: regex)
+    }
+
+    /// GPUパス。失敗時は throw し、呼び出し側がCPUにフォールバックする
+    private func runShaGPU(matcher: String, settings: SearchSettings) async throws {
+        let engine = MetalEngine.shared
+        try sha.prepare(matcher: matcher, threadWidth: 128)
             let tune = engine.autoTune(
                 measure: { tg, tw in
                     try self.sha.allocate(threadgroups: tg, threadWidth: tw)
@@ -234,16 +261,20 @@ final class MinerViewModel: ObservableObject {
                 seed = TripSpec.incrementMessage12(seed, by: step * UInt32(sha.batchCount))
                 await Task.yield()
             }
-        } else {
-            state = .mining
-            var seed = TripSpec.randomMessage12()
-            while !stopRequested {
-                let found = sha.searchCPU(seed: seed, count: 4096, match: isMatch)
-                appendMatches(found.map { "◆\($0.trip) : #\($0.key)" })
-                noteHashes(4096)
-                seed = TripSpec.incrementMessage12(seed, by: 4096)
-                await Task.yield()
-            }
+    }
+
+    private func runShaCPU(regex: NSRegularExpression) async {
+        func isMatch(_ trip: String) -> Bool {
+            regex.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
+        }
+        state = .mining
+        var seed = TripSpec.randomMessage12()
+        while !stopRequested {
+            let found = sha.searchCPU(seed: seed, count: 4096, match: isMatch)
+            appendMatches(found.map { "◆\($0.trip) : #\($0.key)" })
+            noteHashes(4096)
+            seed = TripSpec.incrementMessage12(seed, by: 4096)
+            await Task.yield()
         }
     }
 }

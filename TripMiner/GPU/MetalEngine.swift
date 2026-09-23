@@ -24,9 +24,15 @@ final class MetalEngine {
     func makeLibrary(baseSource: String, matcher: String, threadWidth: Int, key: String) throws -> MTLLibrary {
         let cacheKey = "\(key)-\(threadWidth)-\(matcher.hashValue)"
         if let lib = libraryCache[cacheKey] { return lib }
-        let src = baseSource
-            .replacingOccurrences(of: "#regex_matcher_code", with: matcher)
+        var src = baseSource
             .replacingOccurrences(of: "#workgroup_size", with: "\(threadWidth)")
+        // 生成matcherの注入: マーカーブロックがあれば置換、なければ旧プレースホルダ
+        if let start = src.range(of: "//__REGEX_MATCHER_BEGIN__"),
+           let end = src.range(of: "//__REGEX_MATCHER_END__", range: start.upperBound..<src.endIndex) {
+            src.replaceSubrange(start.lowerBound..<end.upperBound, with: matcher)
+        } else {
+            src = src.replacingOccurrences(of: "#regex_matcher_code", with: matcher)
+        }
         guard let device else { throw MetalError.noDevice }
         let lib = try device.makeLibrary(source: src, options: nil)
         libraryCache[cacheKey] = lib

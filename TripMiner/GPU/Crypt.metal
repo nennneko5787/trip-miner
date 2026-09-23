@@ -696,7 +696,10 @@ inline void make_block(uint baseLo, uint baseHi, uint gid, thread uint *o) {
   }
 }
 
-#regex_matcher_code
+//__REGEX_MATCHER_BEGIN__
+// 単体コンパイル用のダミー。実行時に MetalEngine が生成matcherに置換する。
+inline uint regex_match(thread uint *) { return 0u; }
+//__REGEX_MATCHER_END__
 
 kernel void cryptMain(uint gid [[thread_position_in_grid]],
                  constant CryptParams &params [[buffer(0)]],

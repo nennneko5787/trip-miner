@@ -11,7 +11,10 @@ struct ShaRegexParams {
   uint _pad2;
 };
 
-#regex_matcher_code
+//__REGEX_MATCHER_BEGIN__
+// 単体コンパイル用のダミー。実行時に MetalEngine が生成matcherに置換する。
+inline uint regex_match(thread uint *) { return 0u; }
+//__REGEX_MATCHER_END__
 
 kernel void shaRegexMain(uint gid [[thread_position_in_grid]],
                  const device uint *digest_input [[buffer(0)]],
