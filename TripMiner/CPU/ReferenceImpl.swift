@@ -85,16 +85,17 @@ enum ReferenceImpl {
         [13,2,8,4,6,15,11,1,10,9,3,14,5,0,12,7,1,15,13,8,10,3,7,4,12,5,6,11,0,14,9,2,7,11,4,1,9,12,14,2,0,6,10,13,15,3,5,8,2,1,14,7,4,10,8,13,15,12,9,0,3,5,6,11],
     ]
 
-    @inline(__always) private static func bit(_ v: UInt32, _ i: Int) -> UInt32 { (v >> (31 - i)) & 1 }
-
-    private static func feistel(_ r: UInt32, _ subkey: [UInt32], _ emod: [Int]) -> UInt32 {
-        var x = [UInt32](repeating: 0, count: 48)
-        for k in 0..<48 { x[k] = bit(r, emod[k]) ^ subkey[k] }
+    /// Feistel関数をワード演算で実装(ビット配列を使わない高速版)。
+    /// subkey は48bitをUInt64下位に詰めたもの、emod は salt適用済みEテーブル。
+    private static func feistel(_ r: UInt32, _ subkey: UInt64, _ emod: [Int]) -> UInt32 {
+        var e: UInt64 = 0
+        for k in 0..<48 { e = (e << 1) | UInt64((r >> (31 - emod[k])) & 1) }
+        let x = e ^ subkey
         var s: UInt32 = 0
         for g in 0..<8 {
-            let b = (0..<6).map { x[g * 6 + $0] }
-            let row = Int((b[0] << 1) | b[5])
-            let col = Int((b[1] << 3) | (b[2] << 2) | (b[3] << 1) | b[4])
+            let v = UInt32((x >> (42 - g * 6)) & 0x3F)
+            let row = Int(((v >> 5) & 1) << 1 | (v & 1))
+            let col = Int((v >> 1) & 0xF)
             s |= UInt32(sBoxes[g][row * 16 + col]) << (28 - g * 4)
         }
         var p: UInt32 = 0
@@ -105,19 +106,23 @@ enum ReferenceImpl {
     /// 10桁トリップ。key は64bit生キー、salt は起動時乱数。
     /// ビット抽出は JS cryptCPU と同一 (FP適用前の状態から60bitを取り出す)。
     static func crypt10(key: UInt64, salt1: Int, salt2: Int) -> String {
-        // 鍵ビット (1-indexed相当 → 0-indexed MSB-first)
-        var kb = [UInt32](repeating: 0, count: 64)
-        for i in 0..<64 { kb[i] = UInt32((key >> (63 - i)) & 1) }
-        // PC-1
-        let cd = pc1.map { kb[$0] }
-        // サブキー16個
-        var subkeys: [[UInt32]] = []
-        var c = Array(cd[0..<28]), d = Array(cd[28..<56])
+        // PC-1 → C/D (各28bitをUInt32下位に詰める)
+        var c: UInt32 = 0, d: UInt32 = 0
+        for i in 0..<28 { c = (c << 1) | UInt32((key >> (63 - UInt64(pc1[i]))) & 1) }
+        for i in 28..<56 { d = (d << 1) | UInt32((key >> (63 - UInt64(pc1[i]))) & 1) }
+        // サブキー16個(各48bitをUInt64下位に詰める)
+        var subkeys = [UInt64](repeating: 0, count: 16)
         for r in 0..<16 {
-            c = Array(c[rotations[r]...] + c[..<rotations[r]])
-            d = Array(d[rotations[r]...] + d[..<rotations[r]])
-            let full = c + d
-            subkeys.append(pc2.map { full[$0] })
+            let rot = rotations[r]
+            c = ((c << rot) | (c >> (28 - rot))) & 0x0FFF_FFFF
+            d = ((d << rot) | (d >> (28 - rot))) & 0x0FFF_FFFF
+            var k: UInt64 = 0
+            for i in 0..<48 {
+                let j = pc2[i]
+                let b: UInt64 = j < 28 ? UInt64((c >> (27 - j)) & 1) : UInt64((d >> (55 - j)) & 1)
+                k = (k << 1) | b
+            }
+            subkeys[r] = k
         }
         // salt適用E-box
         let salt = salt1 | (salt2 << 6)

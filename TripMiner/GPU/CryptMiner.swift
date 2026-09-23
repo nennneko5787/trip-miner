@@ -51,10 +51,8 @@ final class CryptMiner {
     func prepare(matcher: String, threadWidth: Int) throws {
         let engine = MetalEngine.shared
         guard engine.isAvailable else { pipeline = nil; return }
-        guard let url = Bundle.main.url(forResource: "Crypt", withExtension: "metal") else {
-            throw MetalEngine.MetalError.missingFunction("Crypt.metal")
-        }
-        let src = try String(contentsOf: url, encoding: .utf8)
+        // シェーダ原文は Shaders.crypt に埋め込み(Bundleリソース非依存)
+        let src = Shaders.crypt
         // E-box salt適用は ebox バッファで渡す(MSL版の方式)。テキスト置換は不要
         let lib = try engine.makeLibrary(baseSource: src, matcher: matcher, threadWidth: threadWidth, key: "crypt")
         pipeline = try engine.makePipeline(library: lib, function: "cryptMain")

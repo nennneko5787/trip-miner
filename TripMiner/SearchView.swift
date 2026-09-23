@@ -8,6 +8,22 @@ enum MinerState: String {
     case mining = "厳選中"
 }
 
+/// 停止フラグ。メインスレッドと計算スレッドで共有する
+final class StopFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _stopped = false
+    var stopped: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return _stopped
+    }
+    func stop() {
+        lock.lock()
+        defer { lock.unlock() }
+        _stopped = true
+    }
+}
+
 @MainActor
 final class MinerViewModel: ObservableObject {
     // 設定 (Web版フォームに対応)
@@ -23,9 +39,8 @@ final class MinerViewModel: ObservableObject {
     @Published var matchCount = 0
     @Published var showHelp = false
 
-    private var stopRequested = false
-    private let crypt = CryptMiner()
-    private let sha = ShaMiner()
+    private var computeTask: Task<Void, Never>?
+    private var stopFlag = StopFlag()
     private var totalHashes = 0
     private var startTime: CFAbsoluteTime = 0
     private var hashes5s = 0
@@ -52,7 +67,9 @@ final class MinerViewModel: ObservableObject {
     }
 
     func stop() {
-        stopRequested = true
+        stopFlag.stop()
+        computeTask?.cancel()
+        computeTask = nil
         state = .stopped
         updateStatus()
     }
@@ -69,38 +86,95 @@ final class MinerViewModel: ObservableObject {
             return
         }
         errorMessage = ""
-        stopRequested = false
+        let flag = StopFlag()
+        stopFlag = flag
         state = .compiling
         updateStatus()
-        Task { await run() }
+        // 計算はバックグラウンドで回す(メインスレッドを塞がない)
+        let settings = settings
+        computeTask = Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            await self.runBackground(settings: settings, stop: flag)
+        }
     }
 
-    // MARK: - 探索ループ
+    // MARK: - 探索ループ(バックグラウンド駆動)
 
-    private func run() async {
-        let settings = settings
-        let pattern: String
+    /// 全体進行。バックグラウンドスレッドで実行し、UI更新だけMainActorに委譲する
+    nonisolated func runBackground(settings: SearchSettings, stop: StopFlag) async {
+        let pattern = SearchValidator.formatRegex(settings)
+        let matcher: String
         do {
-            pattern = SearchValidator.formatRegex(settings)
             let cases = try RegexCore.compile(pattern: pattern, targetLen: settings.digit)
-            let optimized = LogicOptimizer.optimize(cases: cases)
-            let matcher = MSLGenerator.generate(ast: optimized, mode: settings.digit)
-            state = .optimizing
-            updateStatus()
-            if settings.digit == 10 {
-                try await runCrypt(pattern: pattern, matcher: matcher, settings: settings)
-            } else {
-                try await runSha(pattern: pattern, matcher: matcher, settings: settings)
-            }
+            matcher = MSLGenerator.generate(ast: LogicOptimizer.optimize(cases: cases), mode: settings.digit)
         } catch {
-            errorMessage = "エラー: \(error.localizedDescription)"
-            state = .stopped
-            updateStatus()
+            await self.failBackground("コンパイルエラー: \(error.localizedDescription)")
+            return
         }
-        if state != .stopped {
-            state = .stopped
-            updateStatus()
+        await self.setState(.optimizing)
+        if MetalEngine.shared.isAvailable {
+            do {
+                if settings.digit == 10 {
+                    try await self.runCryptGPUBackground(matcher: matcher, stop: stop)
+                } else {
+                    try await self.runShaGPUBackground(matcher: matcher, stop: stop)
+                }
+                await self.finishBackground()
+                return
+            } catch {
+                if stop.stopped {
+                    await self.finishBackground()
+                    return
+                }
+                await self.noteFallback("GPU初期化失敗(\(error.localizedDescription))のためCPUで継続します")
+            }
         }
+        if stop.stopped {
+            await self.finishBackground()
+            return
+        }
+        if settings.digit == 10 {
+            await self.runCryptCPUBackground(pattern: pattern, stop: stop)
+        } else {
+            await self.runShaCPUBackground(pattern: pattern, stop: stop)
+        }
+        await self.finishBackground()
+    }
+
+    // MARK: MainActor側の小物(UI更新専用)
+
+    private func setState(_ s: MinerState) {
+        state = s
+        updateStatus()
+    }
+
+    private func beginMining() {
+        resetStats()
+        state = .mining
+        updateStatus()
+    }
+
+    private func finishBackground() {
+        state = .stopped
+        updateStatus()
+    }
+
+    private func failBackground(_ msg: String) {
+        errorMessage = msg
+        state = .stopped
+        updateStatus()
+    }
+
+    private func noteFallback(_ msg: String) {
+        errorMessage = msg
+    }
+
+    /// バックグラウンドからの定期反映
+    private func flush(lines: [String], hashes: Int) {
+        if state == .stopped { return }
+        appendMatches(lines)
+        noteHashes(hashes)
+        updateStatus()
     }
 
     private func resetStats() {
@@ -145,136 +219,157 @@ final class MinerViewModel: ObservableObject {
 
     // MARK: 10桁
 
-    private func runCrypt(pattern: String, matcher: String, settings: SearchSettings) async throws {
-        resetStats()
-        let regex = try NSRegularExpression(pattern: pattern)
-        // GPU初期化・実行に失敗したらCPUにフォールバックする
-        if MetalEngine.shared.isAvailable {
-            do {
-                try await runCryptGPU(matcher: matcher, settings: settings)
-                return
-            } catch {
-                if stopRequested { return }
-                errorMessage = "GPU初期化に失敗したためCPUで継続します"
-            }
-        }
-        if stopRequested { return }
-        await runCryptCPU(regex: regex)
-    }
-
-    /// GPUパス。失敗時は throw し、呼び出し側がCPUにフォールバックする
-    private func runCryptGPU(matcher: String, settings: SearchSettings) async throws {
+    nonisolated func runCryptGPUBackground(matcher: String, stop: StopFlag) async throws {
         let engine = MetalEngine.shared
+        let crypt = CryptMiner()
         try crypt.prepare(matcher: matcher, threadWidth: 128)
-            // 自動調整
-            let tune = engine.autoTune(
-                measure: { tg, tw in
-                    try self.crypt.allocate(threadgroups: tg, threadWidth: tw)
-                    let seed = TripSpec.randomSeed10()
-                    let (ms, masks) = try self.crypt.runBatch(seedLo: seed.lo, seedHi: seed.hi)
-                    let found = self.crypt.decode(masks: masks, seedLo: seed.lo, seedHi: seed.hi)
-                    self.appendMatches(found.map { "◆\($0.trip) : ##\($0.key)" })
-                    self.noteHashes(TripSpec.hashesPerIteration10(workgroups: tg, workgroupSize: tw))
-                    return ms
-                },
-                hashesPerIter: { TripSpec.hashesPerIteration10(workgroups: $0, workgroupSize: $1) },
-                shouldStop: { self.stopRequested })
-            if stopRequested { return }
-            try crypt.allocate(threadgroups: tune.threadgroups, threadWidth: tune.threadWidth)
-            try crypt.prepare(matcher: matcher, threadWidth: tune.threadWidth)
-            state = .mining
-            var seed = TripSpec.randomSeed10()
-            let step = TripSpec.step10(workgroups: tune.threadgroups, workgroupSize: tune.threadWidth)
-            while !stopRequested {
+        // 自動調整(測定中のヒットも拾う)
+        var tuneLines: [String] = []
+        var tuneHashes = 0
+        let tune = engine.autoTune(
+            measure: { tg, tw in
+                if stop.stopped { throw CancellationError() }
+                try crypt.allocate(threadgroups: tg, threadWidth: tw)
+                let seed = TripSpec.randomSeed10()
                 let (ms, masks) = try crypt.runBatch(seedLo: seed.lo, seedHi: seed.hi)
-                _ = ms
-                let found = crypt.decode(masks: masks, seedLo: seed.lo, seedHi: seed.hi)
-                appendMatches(found.map { "◆\($0.trip) : ##\($0.key)" })
-                noteHashes(TripSpec.hashesPerIteration10(workgroups: tune.threadgroups, workgroupSize: tune.threadWidth))
-                seed = TripSpec.advanceSeed10(lo: seed.lo, hi: seed.hi, step: step)
-                await Task.yield()
+                tuneLines += crypt.decode(masks: masks, seedLo: seed.lo, seedHi: seed.hi).map { "◆\($0.trip) : ##\($0.key)" }
+                tuneHashes += TripSpec.hashesPerIteration10(workgroups: tg, workgroupSize: tw)
+                return ms
+            },
+            hashesPerIter: { TripSpec.hashesPerIteration10(workgroups: $0, workgroupSize: $1) },
+            shouldStop: { stop.stopped })
+        if stop.stopped { return }
+        try crypt.allocate(threadgroups: tune.threadgroups, threadWidth: tune.threadWidth)
+        try crypt.prepare(matcher: matcher, threadWidth: tune.threadWidth)
+        await self.beginMining()
+        await self.flush(lines: tuneLines, hashes: tuneHashes)
+        var seed = TripSpec.randomSeed10()
+        let step = TripSpec.step10(workgroups: tune.threadgroups, workgroupSize: tune.threadWidth)
+        let perIter = TripSpec.hashesPerIteration10(workgroups: tune.threadgroups, workgroupSize: tune.threadWidth)
+        var pendingLines: [String] = []
+        var pendingHashes = 0
+        var lastFlush = CFAbsoluteTimeGetCurrent()
+        while !stop.stopped {
+            let (_, masks) = try crypt.runBatch(seedLo: seed.lo, seedHi: seed.hi)
+            pendingLines += crypt.decode(masks: masks, seedLo: seed.lo, seedHi: seed.hi).map { "◆\($0.trip) : ##\($0.key)" }
+            pendingHashes += perIter
+            seed = TripSpec.advanceSeed10(lo: seed.lo, hi: seed.hi, step: step)
+            let now = CFAbsoluteTimeGetCurrent()
+            if (!pendingLines.isEmpty && now - lastFlush > 0.15) || (pendingHashes > 0 && now - lastFlush > 0.5) || pendingLines.count > 400 {
+                await self.flush(lines: pendingLines, hashes: pendingHashes)
+                pendingLines = []
+                pendingHashes = 0
+                lastFlush = now
             }
+        }
+        if !pendingLines.isEmpty || pendingHashes > 0 {
+            await self.flush(lines: pendingLines, hashes: pendingHashes)
+        }
     }
 
-    private func runCryptCPU(regex: NSRegularExpression) async {
-        func isMatch(_ trip: String) -> Bool {
-            regex.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
-        }
-        state = .mining
+    nonisolated func runCryptCPUBackground(pattern: String, stop: StopFlag) async {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
+        let crypt = CryptMiner()
+        await self.beginMining()
         var seed = TripSpec.randomSeed10()
-        while !stopRequested {
-            let found = crypt.searchCPU(seedLo: seed.lo, seedHi: seed.hi, count: 4096, match: isMatch)
-            appendMatches(found.map { "◆\($0.trip) : ##\($0.key)" })
-            noteHashes(4096)
-            seed = TripSpec.advanceSeed10(lo: seed.lo, hi: seed.hi, step: 4096 * 7)
-            await Task.yield()
+        var pendingLines: [String] = []
+        var pendingHashes = 0
+        var lastFlush = CFAbsoluteTimeGetCurrent()
+        while !stop.stopped {
+            let found = crypt.searchCPU(seedLo: seed.lo, seedHi: seed.hi, count: 8192, match: { trip in
+                regex.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
+            })
+            pendingLines += found.map { "◆\($0.trip) : ##\($0.key)" }
+            pendingHashes += 8192
+            seed = TripSpec.advanceSeed10(lo: seed.lo, hi: seed.hi, step: 8192 * 7)
+            let now = CFAbsoluteTimeGetCurrent()
+            if (!pendingLines.isEmpty && now - lastFlush > 0.15) || (pendingHashes > 0 && now - lastFlush > 0.5) || pendingLines.count > 400 {
+                await self.flush(lines: pendingLines, hashes: pendingHashes)
+                pendingLines = []
+                pendingHashes = 0
+                lastFlush = now
+            }
+        }
+        if !pendingLines.isEmpty || pendingHashes > 0 {
+            await self.flush(lines: pendingLines, hashes: pendingHashes)
         }
     }
 
     // MARK: 12桁
 
-    private func runSha(pattern: String, matcher: String, settings: SearchSettings) async throws {
-        resetStats()
-        let regex = try NSRegularExpression(pattern: pattern)
-        // GPU初期化・実行に失敗したらCPUにフォールバックする
-        if MetalEngine.shared.isAvailable {
-            do {
-                try await runShaGPU(matcher: matcher, settings: settings)
-                return
-            } catch {
-                if stopRequested { return }
-                errorMessage = "GPU初期化に失敗したためCPUで継続します"
-            }
-        }
-        if stopRequested { return }
-        await runShaCPU(regex: regex)
-    }
-
-    /// GPUパス。失敗時は throw し、呼び出し側がCPUにフォールバックする
-    private func runShaGPU(matcher: String, settings: SearchSettings) async throws {
+    nonisolated func runShaGPUBackground(matcher: String, stop: StopFlag) async throws {
         let engine = MetalEngine.shared
+        let sha = ShaMiner()
         try sha.prepare(matcher: matcher, threadWidth: 128)
-            let tune = engine.autoTune(
-                measure: { tg, tw in
-                    try self.sha.allocate(threadgroups: tg, threadWidth: tw)
-                    let seed = TripSpec.randomMessage12()
-                    let (ms, masks) = try self.sha.runBatch(seed: seed)
-                    let found = self.sha.decode(masks: masks, seed: seed)
-                    self.appendMatches(found.map { "◆\($0.trip) : #\($0.key)" })
-                    self.noteHashes(TripSpec.hashesPerIteration12(workgroups: tg, workgroupSize: tw))
-                    return ms
-                },
-                hashesPerIter: { TripSpec.hashesPerIteration12(workgroups: $0, workgroupSize: $1) },
-                shouldStop: { self.stopRequested })
-            if stopRequested { return }
-            try sha.allocate(threadgroups: tune.threadgroups, threadWidth: tune.threadWidth)
-            try sha.prepare(matcher: matcher, threadWidth: tune.threadWidth)
-            state = .mining
-            var seed = TripSpec.randomMessage12()
-            let step = TripSpec.step12(workgroups: tune.threadgroups, workgroupSize: tune.threadWidth)
-            while !stopRequested {
+        var tuneLines: [String] = []
+        var tuneHashes = 0
+        let tune = engine.autoTune(
+            measure: { tg, tw in
+                if stop.stopped { throw CancellationError() }
+                try sha.allocate(threadgroups: tg, threadWidth: tw)
+                let seed = TripSpec.randomMessage12()
                 let (ms, masks) = try sha.runBatch(seed: seed)
-                _ = ms
-                let found = sha.decode(masks: masks, seed: seed)
-                appendMatches(found.map { "◆\($0.trip) : #\($0.key)" })
-                noteHashes(TripSpec.hashesPerIteration12(workgroups: tune.threadgroups, workgroupSize: tune.threadWidth))
-                seed = TripSpec.incrementMessage12(seed, by: step * UInt32(sha.batchCount))
-                await Task.yield()
+                tuneLines += sha.decode(masks: masks, seed: seed).map { "◆\($0.trip) : #\($0.key)" }
+                tuneHashes += TripSpec.hashesPerIteration12(workgroups: tg, workgroupSize: tw)
+                return ms
+            },
+            hashesPerIter: { TripSpec.hashesPerIteration12(workgroups: $0, workgroupSize: $1) },
+            shouldStop: { stop.stopped })
+        if stop.stopped { return }
+        try sha.allocate(threadgroups: tune.threadgroups, threadWidth: tune.threadWidth)
+        try sha.prepare(matcher: matcher, threadWidth: tune.threadWidth)
+        await self.beginMining()
+        await self.flush(lines: tuneLines, hashes: tuneHashes)
+        var seed = TripSpec.randomMessage12()
+        let step = TripSpec.step12(workgroups: tune.threadgroups, workgroupSize: tune.threadWidth)
+        let perIter = TripSpec.hashesPerIteration12(workgroups: tune.threadgroups, workgroupSize: tune.threadWidth)
+        var pendingLines: [String] = []
+        var pendingHashes = 0
+        var lastFlush = CFAbsoluteTimeGetCurrent()
+        while !stop.stopped {
+            let (_, masks) = try sha.runBatch(seed: seed)
+            pendingLines += sha.decode(masks: masks, seed: seed).map { "◆\($0.trip) : #\($0.key)" }
+            pendingHashes += perIter
+            seed = TripSpec.incrementMessage12(seed, by: step * UInt32(sha.batchCount))
+            let now = CFAbsoluteTimeGetCurrent()
+            if (!pendingLines.isEmpty && now - lastFlush > 0.15) || (pendingHashes > 0 && now - lastFlush > 0.5) || pendingLines.count > 400 {
+                await self.flush(lines: pendingLines, hashes: pendingHashes)
+                pendingLines = []
+                pendingHashes = 0
+                lastFlush = now
             }
+        }
+        if !pendingLines.isEmpty || pendingHashes > 0 {
+            await self.flush(lines: pendingLines, hashes: pendingHashes)
+        }
     }
 
-    private func runShaCPU(regex: NSRegularExpression) async {
-        func isMatch(_ trip: String) -> Bool {
-            regex.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
-        }
-        state = .mining
+    nonisolated func runShaCPUBackground(pattern: String, stop: StopFlag) async {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
+        let sha = ShaMiner()
+        await self.beginMining()
         var seed = TripSpec.randomMessage12()
-        while !stopRequested {
-            let found = sha.searchCPU(seed: seed, count: 4096, match: isMatch)
-            appendMatches(found.map { "◆\($0.trip) : #\($0.key)" })
-            noteHashes(4096)
-            seed = TripSpec.incrementMessage12(seed, by: 4096)
-            await Task.yield()
+        var pendingLines: [String] = []
+        var pendingHashes = 0
+        var lastFlush = CFAbsoluteTimeGetCurrent()
+        while !stop.stopped {
+            let seedCopy = seed
+            let found = sha.searchCPU(seed: seedCopy, count: 8192, match: { trip in
+                regex.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
+            })
+            pendingLines += found.map { "◆\($0.trip) : #\($0.key)" }
+            pendingHashes += 8192
+            seed = TripSpec.incrementMessage12(seed, by: 8192)
+            let now = CFAbsoluteTimeGetCurrent()
+            if (!pendingLines.isEmpty && now - lastFlush > 0.15) || (pendingHashes > 0 && now - lastFlush > 0.5) || pendingLines.count > 400 {
+                await self.flush(lines: pendingLines, hashes: pendingHashes)
+                pendingLines = []
+                pendingHashes = 0
+                lastFlush = now
+            }
+        }
+        if !pendingLines.isEmpty || pendingHashes > 0 {
+            await self.flush(lines: pendingLines, hashes: pendingHashes)
         }
     }
 }
@@ -345,14 +440,14 @@ struct SearchView: View {
                     Button("使い方") { vm.showHelp = true }
                 }
                 Section(header: HStack {
-                    Text("ヒットしたトリップ")
+                    Text("ヒットしたトリップ(最新30件)")
                     Spacer()
                     Button("クリア") { vm.clear() }
                 }) {
                     if vm.results.isEmpty {
                         Text("—").foregroundColor(.secondary)
                     } else {
-                        ForEach(Array(vm.results.suffix(200).enumerated()), id: \.offset) { _, line in
+                        ForEach(Array(vm.results.suffix(30).enumerated()), id: \.offset) { _, line in
                             Text(line)
                                 .font(.system(.caption, design: .monospaced))
                                 .textSelection(.enabled)

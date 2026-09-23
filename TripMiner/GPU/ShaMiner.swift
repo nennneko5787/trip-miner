@@ -35,12 +35,9 @@ final class ShaMiner {
     func prepare(matcher: String, threadWidth: Int) throws {
         let engine = MetalEngine.shared
         guard engine.isAvailable else { return }
-        guard let hashURL = Bundle.main.url(forResource: "ShaHash", withExtension: "metal"),
-              let regexURL = Bundle.main.url(forResource: "ShaRegex", withExtension: "metal") else {
-            throw MetalEngine.MetalError.missingFunction("Sha*.metal")
-        }
-        let hashSrc = try String(contentsOf: hashURL, encoding: .utf8)
-        let regexSrc = try String(contentsOf: regexURL, encoding: .utf8)
+        // シェーダ原文は Shaders に埋め込み(Bundleリソース非依存)
+        let hashSrc = Shaders.shaHash
+        let regexSrc = Shaders.shaRegex
         let hashLib = try engine.makeLibrary(baseSource: hashSrc, matcher: "", threadWidth: threadWidth, key: "sha-hash")
         let regexLib = try engine.makeLibrary(baseSource: regexSrc, matcher: matcher, threadWidth: threadWidth, key: "sha-regex")
         hashPipeline = try engine.makePipeline(library: hashLib, function: "shaHashMain")

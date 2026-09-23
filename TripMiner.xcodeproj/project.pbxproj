@@ -18,9 +18,7 @@
 		120000000000000000000009 /* CryptMiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000009 /* CryptMiner.swift */; };
 		12000000000000000000000A /* ShaMiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000A /* ShaMiner.swift */; };
 		12000000000000000000000B /* ReferenceImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000B /* ReferenceImpl.swift */; };
-		14000000000000000000000C /* Crypt.metal in Resources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000C /* Crypt.metal */; };
-		14000000000000000000000D /* ShaHash.metal in Resources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000D /* ShaHash.metal */; };
-		14000000000000000000000E /* ShaRegex.metal in Resources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000E /* ShaRegex.metal */; };
+		12000000000000000000000F /* Shaders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000F /* Shaders.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +32,7 @@
 		110000000000000000000008 /* MetalEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalEngine.swift; sourceTree = "<group>"; };
 		110000000000000000000009 /* CryptMiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptMiner.swift; sourceTree = "<group>"; };
 		11000000000000000000000A /* ShaMiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShaMiner.swift; sourceTree = "<group>"; };
+		11000000000000000000000F /* Shaders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shaders.swift; sourceTree = "<group>"; };
 		11000000000000000000000B /* ReferenceImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferenceImpl.swift; sourceTree = "<group>"; };
 		11000000000000000000000C /* Crypt.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Crypt.metal; sourceTree = "<group>"; };
 		11000000000000000000000D /* ShaHash.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ShaHash.metal; sourceTree = "<group>"; };
@@ -98,6 +97,7 @@
 				110000000000000000000008 /* MetalEngine.swift */,
 				110000000000000000000009 /* CryptMiner.swift */,
 				11000000000000000000000A /* ShaMiner.swift */,
+				11000000000000000000000F /* Shaders.swift */,
 				11000000000000000000000C /* Crypt.metal */,
 				11000000000000000000000D /* ShaHash.metal */,
 				11000000000000000000000E /* ShaRegex.metal */,
@@ -171,9 +171,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				14000000000000000000000C /* Crypt.metal in Resources */,
-				14000000000000000000000D /* ShaHash.metal in Resources */,
-				14000000000000000000000E /* ShaRegex.metal in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -195,6 +192,7 @@
 				120000000000000000000009 /* CryptMiner.swift in Sources */,
 				12000000000000000000000A /* ShaMiner.swift in Sources */,
 				12000000000000000000000B /* ReferenceImpl.swift in Sources */,
+				12000000000000000000000F /* Shaders.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

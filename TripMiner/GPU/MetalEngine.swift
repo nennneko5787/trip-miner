@@ -9,6 +9,7 @@ final class MetalEngine {
     let device: MTLDevice?
     let queue: MTLCommandQueue?
     private var libraryCache: [String: MTLLibrary] = [:]
+    private let cacheLock = NSLock()
 
     var isAvailable: Bool { device != nil && queue != nil }
 
@@ -23,7 +24,10 @@ final class MetalEngine {
     /// JS: GPUHelper.buildRegexWGSL に対応(#regex_matcher_code 置換)。
     func makeLibrary(baseSource: String, matcher: String, threadWidth: Int, key: String) throws -> MTLLibrary {
         let cacheKey = "\(key)-\(threadWidth)-\(matcher.hashValue)"
-        if let lib = libraryCache[cacheKey] { return lib }
+        cacheLock.lock()
+        let cached = libraryCache[cacheKey]
+        cacheLock.unlock()
+        if let lib = cached { return lib }
         var src = baseSource
             .replacingOccurrences(of: "#workgroup_size", with: "\(threadWidth)")
         // 生成matcherの注入: マーカーブロックがあれば置換、なければ旧プレースホルダ
@@ -35,7 +39,9 @@ final class MetalEngine {
         }
         guard let device else { throw MetalError.noDevice }
         let lib = try device.makeLibrary(source: src, options: nil)
+        cacheLock.lock()
         libraryCache[cacheKey] = lib
+        cacheLock.unlock()
         return lib
     }
 
