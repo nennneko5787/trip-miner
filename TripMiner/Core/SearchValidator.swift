@@ -59,7 +59,7 @@ enum SearchValidator {
             if estimated == 0 { return "マッチするトリップが存在しない可能性があります。" }
             // 確率バリデーション (JS と同一の閾値)
             let total = pow(64.0, Double(s.digit))
-            let threshold = s.digit == 10 ? pow(64.0, 10) / pow(64.0, 6) : pow(64.0, 12) / pow(64.0, 8)
+            let threshold = s.digit == 10 ? pow(64.0, 10.0) / pow(64.0, 6.0) : pow(64.0, 12.0) / pow(64.0, 8.0)
             let rate = max(total / Double(max(estimated, 1)), 1)
             if rate < threshold {
                 return "マッチ率が高すぎます。条件を厳しくしてください。推定マッチ率: 1/\(formatUnit(rate))"

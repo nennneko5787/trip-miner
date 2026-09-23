@@ -93,8 +93,8 @@ enum ReferenceImpl {
         var s: UInt32 = 0
         for g in 0..<8 {
             let b = (0..<6).map { x[g * 6 + $0] }
-            let row = (b[0] << 1) | b[5]
-            let col = (b[1] << 3) | (b[2] << 2) | (b[3] << 1) | b[4]
+            let row = Int((b[0] << 1) | b[5])
+            let col = Int((b[1] << 3) | (b[2] << 2) | (b[3] << 1) | b[4])
             s |= UInt32(sBoxes[g][row * 16 + col]) << (28 - g * 4)
         }
         var p: UInt32 = 0
@@ -109,7 +109,7 @@ enum ReferenceImpl {
         var kb = [UInt32](repeating: 0, count: 64)
         for i in 0..<64 { kb[i] = UInt32((key >> (63 - i)) & 1) }
         // PC-1
-        var cd = pc1.map { kb[$0] }
+        let cd = pc1.map { kb[$0] }
         // サブキー16個
         var subkeys: [[UInt32]] = []
         var c = Array(cd[0..<28]), d = Array(cd[28..<56])

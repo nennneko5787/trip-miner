@@ -77,7 +77,7 @@ final class ShaMiner {
         for b in 0..<batchCount {
             let msg = TripSpec.incrementMessage12(seed, by: UInt32(laneCount * b))
             var w = Self.encodeMessage(msg)
-            var mw = MessageWire(m0: w[0], m1: w[1], m2: w[2], pad: 0)
+            let mw = MessageWire(m0: w[0], m1: w[1], m2: w[2], pad: 0)
             memcpy(inBuf.contents(), &mw, MemoryLayout<MessageWire>.stride)
             var pw = ParamsWire(total: UInt32(laneCount), batch: UInt32(b), count: UInt32(batchCount), pad: 0)
             memcpy(paramsBuf.contents(), &pw, MemoryLayout<ParamsWire>.stride)

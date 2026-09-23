@@ -123,7 +123,7 @@ enum MSLGenerator {
                     for (p, q) in zip(pi, s) where p != "-" && p != q { return false }
                     return true
                 }
-                if cover.count > bestCover.count { bestCover = cover; best = pi }
+                if cover.count > bestCover.count { bestCover = Array(cover); best = pi }
             }
             guard let b = best else { break }
             selected.append(b)

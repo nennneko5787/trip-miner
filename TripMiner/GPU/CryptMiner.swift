@@ -51,7 +51,6 @@ final class CryptMiner {
     func prepare(matcher: String, threadWidth: Int) throws {
         let engine = MetalEngine.shared
         guard engine.isAvailable else { pipeline = nil; return }
-        let ebox = Self.modifiedEBox(salt: saltValue)
         guard let url = Bundle.main.url(forResource: "Crypt", withExtension: "metal") else {
             throw MetalEngine.MetalError.missingFunction("Crypt.metal")
         }

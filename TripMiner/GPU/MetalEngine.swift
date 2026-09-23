@@ -104,7 +104,7 @@ final class MetalEngine {
             if shouldStop() { break }
             guard let dev = device, tg * tw <= 1_048_576 else { break }
             _ = dev.maxThreadsPerThreadgroup
-            if tw > dev.maxThreadsPerThreadgroup { continue }
+            if tw > dev.maxThreadsPerThreadgroup.width { continue }
             do {
                 var total = 0.0
                 let iters = 5

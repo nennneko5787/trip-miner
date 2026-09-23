@@ -124,7 +124,7 @@ enum RegexCore {
                 return .concat(nodes: ns.map { analyzeLength($0) })
             case let .repeatNode(n, min, max):
                 let inner = analyzeLength(n)
-                return .repeatNode(node: inner, min: min, max: min(max, maxLen))
+                return .repeatNode(node: inner, min: min, max: Swift.min(max, maxLen))
             }
         }
 
