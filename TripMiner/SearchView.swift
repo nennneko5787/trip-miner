@@ -115,9 +115,9 @@ final class MinerViewModel: ObservableObject {
         if MetalEngine.shared.isAvailable {
             do {
                 if settings.digit == 10 {
-                    try await self.runCryptGPUBackground(matcher: matcher, stop: stop)
+                    try await self.runCryptGPUBackground(pattern: pattern, matcher: matcher, stop: stop)
                 } else {
-                    try await self.runShaGPUBackground(matcher: matcher, stop: stop)
+                    try await self.runShaGPUBackground(pattern: pattern, matcher: matcher, stop: stop)
                 }
                 await self.finishBackground()
                 return
@@ -219,7 +219,12 @@ final class MinerViewModel: ObservableObject {
 
     // MARK: 10桁
 
-    nonisolated func runCryptGPUBackground(matcher: String, stop: StopFlag) async throws {
+    nonisolated func runCryptGPUBackground(pattern: String, matcher: String, stop: StopFlag) async throws {
+        // GPU matcher とは独立に表示前再検証する(誤ヒット混入防止)
+        guard let matchRE = try? NSRegularExpression(pattern: pattern) else { return }
+        func hit(_ trip: String) -> Bool {
+            matchRE.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
+        }
         let engine = MetalEngine.shared
         let crypt = CryptMiner()
         try crypt.prepare(matcher: matcher, threadWidth: 128)
@@ -232,7 +237,7 @@ final class MinerViewModel: ObservableObject {
                 try crypt.allocate(threadgroups: tg, threadWidth: tw)
                 let seed = TripSpec.randomSeed10()
                 let (ms, masks) = try crypt.runBatch(seedLo: seed.lo, seedHi: seed.hi)
-                tuneLines += crypt.decode(masks: masks, seedLo: seed.lo, seedHi: seed.hi).map { "◆\($0.trip) : ##\($0.key)" }
+                tuneLines += crypt.decode(masks: masks, seedLo: seed.lo, seedHi: seed.hi).filter { hit($0.trip) }.map { "◆\($0.trip) : ##\($0.key)" }
                 tuneHashes += TripSpec.hashesPerIteration10(workgroups: tg, workgroupSize: tw)
                 return ms
             },
@@ -251,7 +256,7 @@ final class MinerViewModel: ObservableObject {
         var lastFlush = CFAbsoluteTimeGetCurrent()
         while !stop.stopped {
             let (_, masks) = try crypt.runBatch(seedLo: seed.lo, seedHi: seed.hi)
-            pendingLines += crypt.decode(masks: masks, seedLo: seed.lo, seedHi: seed.hi).map { "◆\($0.trip) : ##\($0.key)" }
+            pendingLines += crypt.decode(masks: masks, seedLo: seed.lo, seedHi: seed.hi).filter { hit($0.trip) }.map { "◆\($0.trip) : ##\($0.key)" }
             pendingHashes += perIter
             seed = TripSpec.advanceSeed10(lo: seed.lo, hi: seed.hi, step: step)
             let now = CFAbsoluteTimeGetCurrent()
@@ -297,7 +302,12 @@ final class MinerViewModel: ObservableObject {
 
     // MARK: 12桁
 
-    nonisolated func runShaGPUBackground(matcher: String, stop: StopFlag) async throws {
+    nonisolated func runShaGPUBackground(pattern: String, matcher: String, stop: StopFlag) async throws {
+        // GPU matcher とは独立に表示前再検証する(誤ヒット混入防止)
+        guard let matchRE = try? NSRegularExpression(pattern: pattern) else { return }
+        func hit(_ trip: String) -> Bool {
+            matchRE.firstMatch(in: trip, range: NSRange(trip.startIndex..., in: trip)) != nil
+        }
         let engine = MetalEngine.shared
         let sha = ShaMiner()
         try sha.prepare(matcher: matcher, threadWidth: 128)
@@ -309,7 +319,7 @@ final class MinerViewModel: ObservableObject {
                 try sha.allocate(threadgroups: tg, threadWidth: tw)
                 let seed = TripSpec.randomMessage12()
                 let (ms, masks) = try sha.runBatch(seed: seed)
-                tuneLines += sha.decode(masks: masks, seed: seed).map { "◆\($0.trip) : #\($0.key)" }
+                tuneLines += sha.decode(masks: masks, seed: seed).filter { hit($0.trip) }.map { "◆\($0.trip) : #\($0.key)" }
                 tuneHashes += TripSpec.hashesPerIteration12(workgroups: tg, workgroupSize: tw)
                 return ms
             },
@@ -328,7 +338,7 @@ final class MinerViewModel: ObservableObject {
         var lastFlush = CFAbsoluteTimeGetCurrent()
         while !stop.stopped {
             let (_, masks) = try sha.runBatch(seed: seed)
-            pendingLines += sha.decode(masks: masks, seed: seed).map { "◆\($0.trip) : #\($0.key)" }
+            pendingLines += sha.decode(masks: masks, seed: seed).filter { hit($0.trip) }.map { "◆\($0.trip) : #\($0.key)" }
             pendingHashes += perIter
             seed = TripSpec.incrementMessage12(seed, by: step * UInt32(sha.batchCount))
             let now = CFAbsoluteTimeGetCurrent()

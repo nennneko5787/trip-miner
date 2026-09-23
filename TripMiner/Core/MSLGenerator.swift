@@ -41,7 +41,18 @@ enum MSLGenerator {
             case .t: return "0xFFFFFFFFu"
             case .f: return "0u"
             case let .lit(charIndex, mask):
-                let minterms = (0..<64).filter { (mask >> UInt64($0)) & 1 == 1 }
+                // mask は RegexCore.alphabet 順の文字集合。これを mode 固有の
+                // 6bit値集合(minterms)に変換する(JS charToValue 相当)。
+                // 10桁: "./0-9A-Za-z"。12桁: "A-Za-z0-9./"(SHA1ダイジェスト素朴バイナリ値順)。
+                let valueAlphabet = mode == 10
+                    ? RegexCore.alphabet
+                    : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./"
+                var minterms: [Int] = []
+                for (i, ch) in RegexCore.alphabet.enumerated() where ((mask >> UInt64(i)) & 1) == 1 {
+                    if let v = valueAlphabet.firstIndex(of: ch) {
+                        minterms.append(valueAlphabet.distance(from: valueAlphabet.startIndex, to: v))
+                    }
+                }
                 let pis = MSLGenerator.minimize(minterms: minterms)
                 if pis.isEmpty { return "0u" }
                 if pis == ["------"] { return "0xFFFFFFFFu" }
