@@ -1,0 +1,6 @@
+build/
+DerivedData/
+*.xcuserdata/
+.DS_Store
+TripMiner-unsigned.ipa
+Payload/

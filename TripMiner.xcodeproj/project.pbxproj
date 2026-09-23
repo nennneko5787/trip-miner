@@ -1,0 +1,332 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		120000000000000000000001 /* TripMinerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000001 /* TripMinerApp.swift */; };
+		120000000000000000000002 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000002 /* SearchView.swift */; };
+		120000000000000000000003 /* TripSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000003 /* TripSpec.swift */; };
+		120000000000000000000004 /* RegexCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000004 /* RegexCore.swift */; };
+		120000000000000000000005 /* LogicOptimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000005 /* LogicOptimizer.swift */; };
+		120000000000000000000006 /* MSLGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000006 /* MSLGenerator.swift */; };
+		120000000000000000000007 /* SearchValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000007 /* SearchValidator.swift */; };
+		120000000000000000000008 /* MetalEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000008 /* MetalEngine.swift */; };
+		120000000000000000000009 /* CryptMiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000009 /* CryptMiner.swift */; };
+		12000000000000000000000A /* ShaMiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000A /* ShaMiner.swift */; };
+		12000000000000000000000B /* ReferenceImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000B /* ReferenceImpl.swift */; };
+		12000000000000000000000C /* Crypt.metal in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000C /* Crypt.metal */; };
+		12000000000000000000000D /* ShaHash.metal in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000D /* ShaHash.metal */; };
+		12000000000000000000000E /* ShaRegex.metal in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000E /* ShaRegex.metal */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		110000000000000000000001 /* TripMinerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripMinerApp.swift; sourceTree = "<group>"; };
+		110000000000000000000002 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		110000000000000000000003 /* TripSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSpec.swift; sourceTree = "<group>"; };
+		110000000000000000000004 /* RegexCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegexCore.swift; sourceTree = "<group>"; };
+		110000000000000000000005 /* LogicOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogicOptimizer.swift; sourceTree = "<group>"; };
+		110000000000000000000006 /* MSLGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSLGenerator.swift; sourceTree = "<group>"; };
+		110000000000000000000007 /* SearchValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchValidator.swift; sourceTree = "<group>"; };
+		110000000000000000000008 /* MetalEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalEngine.swift; sourceTree = "<group>"; };
+		110000000000000000000009 /* CryptMiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptMiner.swift; sourceTree = "<group>"; };
+		11000000000000000000000A /* ShaMiner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShaMiner.swift; sourceTree = "<group>"; };
+		11000000000000000000000B /* ReferenceImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferenceImpl.swift; sourceTree = "<group>"; };
+		11000000000000000000000C /* Crypt.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Crypt.metal; sourceTree = "<group>"; };
+		11000000000000000000000D /* ShaHash.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ShaHash.metal; sourceTree = "<group>"; };
+		11000000000000000000000E /* ShaRegex.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ShaRegex.metal; sourceTree = "<group>"; };
+		130000000000000000000001 /* TripMiner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TripMiner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		10000000000000000000000B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		100000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000004 /* TripMiner */,
+				100000000000000000000002 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		100000000000000000000002 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				130000000000000000000001 /* TripMiner.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		100000000000000000000004 /* TripMiner */ = {
+			isa = PBXGroup;
+			children = (
+				110000000000000000000001 /* TripMinerApp.swift */,
+				110000000000000000000002 /* SearchView.swift */,
+				100000000000000000000005 /* Core */,
+				100000000000000000000006 /* GPU */,
+				100000000000000000000007 /* CPU */,
+			);
+			path = TripMiner;
+			sourceTree = "<group>";
+		};
+		100000000000000000000005 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				110000000000000000000003 /* TripSpec.swift */,
+				110000000000000000000004 /* RegexCore.swift */,
+				110000000000000000000005 /* LogicOptimizer.swift */,
+				110000000000000000000006 /* MSLGenerator.swift */,
+				110000000000000000000007 /* SearchValidator.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		100000000000000000000006 /* GPU */ = {
+			isa = PBXGroup;
+			children = (
+				110000000000000000000008 /* MetalEngine.swift */,
+				110000000000000000000009 /* CryptMiner.swift */,
+				11000000000000000000000A /* ShaMiner.swift */,
+				11000000000000000000000C /* Crypt.metal */,
+				11000000000000000000000D /* ShaHash.metal */,
+				11000000000000000000000E /* ShaRegex.metal */,
+			);
+			path = GPU;
+			sourceTree = "<group>";
+		};
+		100000000000000000000007 /* CPU */ = {
+			isa = PBXGroup;
+			children = (
+				11000000000000000000000B /* ReferenceImpl.swift */,
+			);
+			path = CPU;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		100000000000000000000009 /* TripMiner */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 10000000000000000000000E /* Build configuration list for PBXNativeTarget "TripMiner" */;
+			buildPhases = (
+				10000000000000000000000A /* Sources */,
+				10000000000000000000000B /* Frameworks */,
+				10000000000000000000000C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TripMiner;
+			productName = TripMiner;
+			productReference = 130000000000000000000001 /* TripMiner.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		100000000000000000000008 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					100000000000000000000009 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = 10000000000000000000000D /* Build configuration list for PBXProject "TripMiner" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = ja;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 100000000000000000000001;
+			productRefGroup = 100000000000000000000002 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				100000000000000000000009 /* TripMiner */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		10000000000000000000000C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		10000000000000000000000A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				120000000000000000000001 /* TripMinerApp.swift in Sources */,
+				120000000000000000000002 /* SearchView.swift in Sources */,
+				120000000000000000000003 /* TripSpec.swift in Sources */,
+				120000000000000000000004 /* RegexCore.swift in Sources */,
+				120000000000000000000005 /* LogicOptimizer.swift in Sources */,
+				120000000000000000000006 /* MSLGenerator.swift in Sources */,
+				120000000000000000000007 /* SearchValidator.swift in Sources */,
+				120000000000000000000008 /* MetalEngine.swift in Sources */,
+				120000000000000000000009 /* CryptMiner.swift in Sources */,
+				12000000000000000000000A /* ShaMiner.swift in Sources */,
+				12000000000000000000000B /* ReferenceImpl.swift in Sources */,
+				12000000000000000000000C /* Crypt.metal in Sources */,
+				12000000000000000000000D /* ShaHash.metal in Sources */,
+				12000000000000000000000E /* ShaRegex.metal in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		10000000000000000000000F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		100000000000000000000010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		100000000000000000000011 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TripMiner;
+				INFOPLIST_KEY_LSRequiresIPhoneOS = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.nennneko5787.trip";
+				PRODUCT_NAME = TripMiner;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		100000000000000000000012 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TripMiner;
+				INFOPLIST_KEY_LSRequiresIPhoneOS = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.nennneko5787.trip";
+				PRODUCT_NAME = TripMiner;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		10000000000000000000000D /* Build configuration list for PBXProject "TripMiner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				10000000000000000000000F /* Debug */,
+				100000000000000000000010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		10000000000000000000000E /* Build configuration list for PBXNativeTarget "TripMiner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				100000000000000000000011 /* Debug */,
+				100000000000000000000012 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 100000000000000000000008 /* Project object */;
+}
