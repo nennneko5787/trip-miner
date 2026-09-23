@@ -698,7 +698,7 @@ inline void make_block(uint baseLo, uint baseHi, uint gid, thread uint *o) {
 
 #regex_matcher_code
 
-kernel void main(uint gid [[thread_position_in_grid]],
+kernel void cryptMain(uint gid [[thread_position_in_grid]],
                  constant CryptParams &params [[buffer(0)]],
                  device uint *output [[buffer(1)]],
                  constant uint *pc2table [[buffer(2)]],

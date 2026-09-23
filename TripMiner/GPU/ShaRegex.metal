@@ -13,8 +13,8 @@ struct ShaRegexParams {
 
 #regex_matcher_code
 
-kernel void main(uint gid [[thread_position_in_grid]],
-                 device const uint *digest_input [[buffer(0)]],
+kernel void shaRegexMain(uint gid [[thread_position_in_grid]],
+                 const device uint *digest_input [[buffer(0)]],
                  constant ShaRegexParams &params [[buffer(1)]],
                  device uint *output_mask [[buffer(2)]]) {
   uint chunks_per_batch = (params.total_lanes + 31u) / 32u;

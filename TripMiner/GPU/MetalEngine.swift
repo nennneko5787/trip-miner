@@ -65,6 +65,14 @@ final class MetalEngine {
         device?.makeBuffer(length: MemoryLayout<T>.stride * count, options: options)
     }
 
+    /// 配列内容で初期化したバッファを作る
+    func makeBuffer<T>(from array: [T], options: MTLResourceOptions = .storageModeShared) -> MTLBuffer? {
+        guard let device, !array.isEmpty else { return nil }
+        return array.withUnsafeBytes { bytes in
+            device.makeBuffer(bytes: bytes.baseAddress!, length: bytes.count, options: options)
+        }
+    }
+
     func makeBuffer(bytes: UnsafeRawPointer, length: Int) -> MTLBuffer? {
         device?.makeBuffer(bytes: bytes, length: length, options: .storageModeShared)
     }

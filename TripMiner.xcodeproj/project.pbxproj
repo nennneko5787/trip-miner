@@ -18,9 +18,9 @@
 		120000000000000000000009 /* CryptMiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000009 /* CryptMiner.swift */; };
 		12000000000000000000000A /* ShaMiner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000A /* ShaMiner.swift */; };
 		12000000000000000000000B /* ReferenceImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000B /* ReferenceImpl.swift */; };
-		12000000000000000000000C /* Crypt.metal in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000C /* Crypt.metal */; };
-		12000000000000000000000D /* ShaHash.metal in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000D /* ShaHash.metal */; };
-		12000000000000000000000E /* ShaRegex.metal in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000E /* ShaRegex.metal */; };
+		14000000000000000000000C /* Crypt.metal in Resources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000C /* Crypt.metal */; };
+		14000000000000000000000D /* ShaHash.metal in Resources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000D /* ShaHash.metal */; };
+		14000000000000000000000E /* ShaRegex.metal in Resources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000000E /* ShaRegex.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -171,6 +171,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				14000000000000000000000C /* Crypt.metal in Resources */,
+				14000000000000000000000D /* ShaHash.metal in Resources */,
+				14000000000000000000000E /* ShaRegex.metal in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -192,9 +195,6 @@
 				120000000000000000000009 /* CryptMiner.swift in Sources */,
 				12000000000000000000000A /* ShaMiner.swift in Sources */,
 				12000000000000000000000B /* ReferenceImpl.swift in Sources */,
-				12000000000000000000000C /* Crypt.metal in Sources */,
-				12000000000000000000000D /* ShaHash.metal in Sources */,
-				12000000000000000000000E /* ShaRegex.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

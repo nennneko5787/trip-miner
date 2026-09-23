@@ -43,8 +43,8 @@ final class ShaMiner {
         let regexSrc = try String(contentsOf: regexURL, encoding: .utf8)
         let hashLib = try engine.makeLibrary(baseSource: hashSrc, matcher: "", threadWidth: threadWidth, key: "sha-hash")
         let regexLib = try engine.makeLibrary(baseSource: regexSrc, matcher: matcher, threadWidth: threadWidth, key: "sha-regex")
-        hashPipeline = try engine.makePipeline(library: hashLib)
-        regexPipeline = try engine.makePipeline(library: regexLib)
+        hashPipeline = try engine.makePipeline(library: hashLib, function: "shaHashMain")
+        regexPipeline = try engine.makePipeline(library: regexLib, function: "shaRegexMain")
     }
 
     struct MessageWire { var m0: UInt32; var m1: UInt32; var m2: UInt32; var pad: UInt32 }
@@ -59,7 +59,7 @@ final class ShaMiner {
         tuning = .init(threadgroups: threadgroups, threadWidth: threadWidth)
         inBuf = device.makeBuffer(length: MemoryLayout<MessageWire>.stride, options: .storageModeShared)
         let cmap = Self.charMapData()
-        charMapBuf = device.makeBuffer(bytes: cmap, length: cmap.count * 4, options: .storageModeShared)
+        charMapBuf = engine.makeBuffer(from: cmap)
         paramsBuf = device.makeBuffer(length: MemoryLayout<ParamsWire>.stride, options: .storageModeShared)
         digestBuf = device.makeBuffer(length: laneCount * batchCount * 3 * 4, options: .storageModeShared)
         maskBuf = device.makeBuffer(length: outWords * 4, options: .storageModeShared)

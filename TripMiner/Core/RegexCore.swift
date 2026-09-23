@@ -121,7 +121,7 @@ enum RegexCore {
                 for (k, v) in merged { groupLenMap[k] = v }
                 return .alternate(nodes: out)
             case let .concat(ns):
-                return .concat(nodes: ns.map(analyzeLength))
+                return .concat(nodes: ns.map { analyzeLength($0) })
             case let .repeatNode(n, min, max):
                 let inner = analyzeLength(n)
                 return .repeatNode(node: inner, min: min, max: min(max, maxLen))

@@ -23,15 +23,15 @@ struct ShaParams {
   uint _pad2;
 };
 
-inline uint table_digit_to_ascii(constant uint *map, uint d) {
-  return map[d];
+inline uint table_digit_to_ascii(constant ShaCharMap &cm, uint d) {
+  return cm.digit_to_ascii[d];
 }
 
-inline uint table_ascii_to_digit(constant uint *map, uint a) {
-  return map[64 + a];
+inline uint table_ascii_to_digit(constant ShaCharMap &cm, uint a) {
+  return cm.ascii_to_digit[64 + a];
 }
 
-inline uint3 add_message_base64(uint3 base, uint index, constant uint *cmap) {
+inline uint3 add_message_base64(uint3 base, uint index, constant ShaCharMap &cmap) {
   uint3 result = base;
   uint carry = index;
   for (uint i = 0; i < 12 && carry > 0; i++) {
@@ -101,7 +101,7 @@ inline uint3 sha1_msg(uint3 message) {
   return uint3(h0, h1, h2);
 }
 
-kernel void main(uint gid [[thread_position_in_grid]],
+kernel void shaHashMain(uint gid [[thread_position_in_grid]],
                  constant ShaMessage &base_message [[buffer(0)]],
                  constant ShaCharMap &char_map [[buffer(1)]],
                  constant ShaParams &params [[buffer(2)]],
@@ -110,7 +110,7 @@ kernel void main(uint gid [[thread_position_in_grid]],
     return;
   }
   uint3 message = uint3(base_message.m0, base_message.m1, base_message.m2);
-  message = add_message_base64(message, gid, char_map.digit_to_ascii);
+  message = add_message_base64(message, gid, char_map);
   uint3 digest = sha1_msg(message);
   uint base = (params.batch_index * params.total_lanes + gid) * 3u;
   digest_output[base] = digest.x;
