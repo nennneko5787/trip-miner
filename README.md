@@ -12,6 +12,10 @@ Web版トリップ検索機の iPhone/iPad 移植。Metal GPU 探索が最速。
 が Release ビルド(`CODE_SIGNING_ALLOWED=NO`)し、`TripMiner-unsigned.ipa`
 を Artifact に上げます。
 
+`main` への push ではさらに GitHub Release(プレリリース)を自動作成します。
+タイトルはコミットメッセージの1行目、本文は全文+コミットSHAで、
+`TripMiner-unsigned.ipa` が添付されます。
+
 ## SideStoreで入れる
 
 1. Actions の Artifact から `TripMiner-unsigned.ipa` を取得
